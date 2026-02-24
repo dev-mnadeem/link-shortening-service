@@ -1,0 +1,17 @@
+node_modules
+coverage
+.env
+.env.local
+.env.*.local
+
+# Local Python virtualenv occasionally created alongside this repo
+project_venv
+
+.DS_Store
+*.log
+npm-debug.log*
+yarn-error.log*
+
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat

@@ -1,0 +1,8 @@
+node_modules
+coverage
+project_venv
+package-lock.json
+
+# Captured evidence: transcripts must stay byte-identical to the run that
+# produced them.
+docs

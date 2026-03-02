@@ -10,6 +10,29 @@ A small bit.ly style URL shortener. `POST /shorten` stores a long URL under a ge
 - Clicks are buffered in memory and written in batches inside one transaction. This means `click_count` can lag by about `CLICK_FLUSH_MS`, and a hard kill can lose the current buffer. On SIGTERM the buffer is flushed.
 - Per-client rate limits, with separate budgets for creating links and for redirects.
 
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API
+    participant Store as MySQL or memory store
+    participant Cache as Process cache
+    participant Buffer as Click buffer
+    Client->>API: POST /shorten with HTTP(S) URL
+    API->>Store: INSERT random code (unique constraint)
+    Store-->>API: Stored code
+    API-->>Client: 201 with short URL
+    Client->>API: GET /code
+    API->>Cache: Resolve cached code
+    opt Cache miss
+        API->>Store: Find URL by code
+        Store-->>API: Destination or missing
+        API->>Cache: Cache lookup result
+    end
+    API->>Buffer: Queue click
+    API-->>Client: 302 Location
+    Buffer->>Store: Periodic batch transaction
+```
+
 The schema is in [sql/schema.sql](sql/schema.sql): a `urls` table and a `url_clicks` table with one row per redirect.
 
 ## Running locally
@@ -39,12 +62,12 @@ curl -X POST http://localhost:3000/shorten \
 curl -i http://localhost:3000/<code>
 ```
 
-| Method | Path | Response |
-| --- | --- | --- |
-| POST | `/shorten` | 201 with `shortUrl` and `code` |
-| GET | `/:code` | 302 redirect |
-| GET | `/healthz` | 200 |
-| GET | `/readyz` | 200, or 503 if storage is down |
+| Method | Path       | Response                       |
+| ------ | ---------- | ------------------------------ |
+| POST   | `/shorten` | 201 with `shortUrl` and `code` |
+| GET    | `/:code`   | 302 redirect                   |
+| GET    | `/healthz` | 200                            |
+| GET    | `/readyz`  | 200, or 503 if storage is down |
 
 Errors use one shape: `{"error": {"code", "message", "details"}}`. URLs must be `http` or `https` and at most 2048 characters.
 
@@ -69,3 +92,19 @@ TEST_MYSQL=1 DB_NAME=url_shortener_test npm run test:mysql
 
 - The cache and rate limiter are per process. Running more than one instance would need a shared store like Redis.
 - There's no auth, no custom aliases and no endpoint to read click stats back.
+
+## Verified native example
+
+![Native URL shortening responses](docs/screenshots/native-api.png)
+
+The [captured HTTP responses](docs/native-api.json) show readiness, link creation,
+the redirect Location header, and rejection of a JavaScript URL. This run uses
+`STORAGE_DRIVER=memory`; it verifies the API flow without claiming MySQL
+persistence. MySQL integration remains a separate check.
+
+The Node 22 CI workflow runs lint, formatting, and the offline tests. Docker
+runtime validation remains unverified in this environment.
+
+## Author
+
+[**Muhammad Nadeem**](https://github.com/dev-mnadeem)

@@ -1,0 +1,45 @@
+{
+  "mode": "Memory driver; data disappears on process exit; redirect not followed",
+  "exchanges": [
+    {
+      "request": "GET /readyz",
+      "status": 200,
+      "response": {
+        "status": "ready",
+        "storage": "memory"
+      }
+    },
+    {
+      "request": "POST /shorten",
+      "status": 201,
+      "response": {
+        "shortUrl": "http://127.0.0.1:15360/kDuC2ivv",
+        "code": "kDuC2ivv",
+        "originalUrl": "https://example.com/portfolio-native-fixture"
+      }
+    },
+    {
+      "request": "GET /kDuC2ivv",
+      "status": 302,
+      "response": {
+        "location": "https://example.com/portfolio-native-fixture"
+      }
+    },
+    {
+      "request": "POST /shorten",
+      "status": 400,
+      "response": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Only http and https URLs are supported.",
+          "details": {
+            "allowedProtocols": [
+              "http:",
+              "https:"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

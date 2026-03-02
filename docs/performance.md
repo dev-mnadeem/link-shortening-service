@@ -52,12 +52,12 @@ label=batched-clicks requests=3000 concurrency=20 statuses=302:3000 elapsed_ms=4
 
 **3000 redirects cost 62 `INSERT`s, 62 `UPDATE`s and 62 transactions.**
 
-The original implementation ran `SELECT` → `BEGIN` → `UPDATE` → `INSERT` →
-`COMMIT` inline on every single redirect. That is 3000 of each, by construction
-— that figure is read off the code path, not measured, because reverting the
-service to measure it was not worth the churn. The reduction in write
-statements is therefore ~48x, and the visitor no longer waits on any of it: the
-`302` is returned as soon as the destination is known.
+A design that persists each click inline — `BEGIN` → `UPDATE` → `INSERT` →
+`COMMIT` on every redirect — issues 3000 of each for the same load, by
+construction. That comparison figure is arithmetic, not a measurement: no such
+build was run here. Against it the batching writer is a ~48x reduction in write
+statements, and the visitor waits on none of them, since the `302` is returned as
+soon as the destination is known.
 
 The cost of that trade is stated in the README's limitations: `click_count` is
 eventually consistent within `CLICK_FLUSH_MS`, and a `SIGKILL` can lose at most

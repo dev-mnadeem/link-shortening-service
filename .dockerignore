@@ -1,0 +1,15 @@
+.git
+.gitignore
+node_modules
+npm-debug.log
+yarn-error.log
+coverage
+docs
+project_venv
+.env
+.env.*
+!.env.example
+*.md
+.vscode
+.idea
+.DS_Store
